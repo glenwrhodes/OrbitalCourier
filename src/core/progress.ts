@@ -1,6 +1,8 @@
 // Saved progress: the best run on each level, kept in localStorage (or any
 // object with the same two methods). Loading never throws: missing, corrupt
 // or unreadable data gives a fresh start, and invalid entries are dropped.
+// The ghost on a record is optional, so saves from before ghosts load as is.
+import { isGhost, type Ghost } from './ghost.ts';
 import type { Level } from './level.ts';
 import type { Stars } from './scoring.ts';
 
@@ -20,6 +22,8 @@ export interface LevelRecord {
   fuel: number;
   /** Flight time of that run, in seconds. */
   time: number;
+  /** The run's path, replayed as a ghost. Saves made before ghosts existed have none. */
+  ghost?: Ghost;
 }
 
 export interface Progress {
@@ -32,6 +36,7 @@ export interface RunResult {
   stars: Stars;
   fuel: number;
   time: number;
+  ghost?: Ghost;
 }
 
 export function emptyProgress(): Progress {
@@ -57,7 +62,11 @@ export function loadProgress(storage: StorageLike | null, levels: readonly Level
   const progress = emptyProgress();
   const known = new Set(levels.map((l) => String(l.id)));
   for (const [id, rec] of Object.entries(data.levels)) {
-    if (known.has(id) && isRecord(rec)) progress.levels[id] = { stars: rec.stars, fuel: rec.fuel, time: rec.time };
+    if (!known.has(id) || !isRecord(rec)) continue;
+    const kept: LevelRecord = { stars: rec.stars, fuel: rec.fuel, time: rec.time };
+    // A damaged ghost costs only the ghost, not the record.
+    if (isGhost(rec.ghost)) kept.ghost = rec.ghost;
+    progress.levels[id] = kept;
   }
   return progress;
 }
@@ -91,8 +100,10 @@ export function recordRun(progress: Progress, levelId: number, run: RunResult): 
   const key = String(levelId);
   const previous = progress.levels[key];
   if (!isBetter(run, previous)) return { progress, newBest: false };
+  const record: LevelRecord = { stars: run.stars, fuel: run.fuel, time: run.time };
+  if (run.ghost) record.ghost = run.ghost;
   return {
-    progress: { ...progress, levels: { ...progress.levels, [key]: { stars: run.stars, fuel: run.fuel, time: run.time } } },
+    progress: { ...progress, levels: { ...progress.levels, [key]: record } },
     newBest: true,
   };
 }

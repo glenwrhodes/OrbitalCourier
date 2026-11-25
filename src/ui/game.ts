@@ -2,6 +2,7 @@
 // requestAnimationFrame timestamps and an input snapshot, so the whole game
 // can be driven from tests. All timing comes from those timestamps.
 import { LAUNCH_CLEARANCE, MIN_LAUNCH_POWER, PREVIEW_SECONDS, TICK_RATE } from '../core/constants.ts';
+import { ghostFromTrail, type Ghost } from '../core/ghost.ts';
 import { LEVELS } from '../core/levels.ts';
 import { predict, type Prediction } from '../core/predict.ts';
 import { emptyProgress, isBetter, isUnlocked, loadProgress, recordRun, saveProgress, type LevelRecord, type Progress, type StorageLike } from '../core/progress.ts';
@@ -87,6 +88,8 @@ export interface Play {
   previewKey: string;
   demo: { speed: number; state: DemoState } | null;
   result: FlightResult | null;
+  /** Best run on this level, replayed alongside the flight. Never set in demo mode. */
+  ghost: Ghost | null;
 }
 
 export interface LevelSelect {
@@ -194,6 +197,8 @@ export function startLevel(g: Game, index: number, ts: number): void {
     previewKey: '',
     demo,
     result: null,
+    // The ghost is the best run as saved when this attempt started; a new best shows from the next attempt.
+    ghost: demo ? null : (g.progress.levels[String(level.id)]?.ghost ?? null),
   };
   if (demo) updateDemo(g.play, ts);
   refreshPreview(g.play);
@@ -401,7 +406,8 @@ function finishFlight(g: Game, p: Play): void {
     p.result = { stars: run.stars, newBest: run.stars > 0 && isBetter(run, previous), previous };
     return;
   }
-  const recorded = recordRun(g.progress, level.id, run);
+  const ghost = run.stars > 0 ? ghostFromTrail(s.trail, s.outcome!.tick) : undefined;
+  const recorded = recordRun(g.progress, level.id, { ...run, ghost });
   if (recorded.newBest) {
     g.progress = recorded.progress;
     saveProgress(g.storage, g.progress);

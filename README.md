@@ -47,6 +47,17 @@ Each level shows its par on its title card and next to the clock and Δv in the 
 
 The best run on each level (most stars, then least Δv, then shortest time) is saved in the browser's localStorage under `orbital-courier:v1`. Failed flights are never recorded. To start over, run `localStorage.removeItem('orbital-courier:v1')` in the browser console.
 
+### Ghost of your best run
+
+On a level you have delivered before, your best run flies alongside you as a faint ghost:
+
+- **While you aim:** its whole route shows as a faint dotted line.
+- **In flight:** a pale ship outline marked BEST sits wherever your best run was at the same moment after its launch, so you can see whether you're ahead or behind.
+
+The ghost is saved with the best run: its position 30 times a second, rounded to a tenth of a unit, about 2–8 KB per level. It plays back by interpolating between those samples, within a pixel of the real flight. A new best shows as the ghost from your next attempt.
+
+Saves from before ghosts existed still load. Those levels just have no ghost until you beat that best. A damaged ghost in a save is dropped and the rest of the record is kept.
+
 ## URL options
 
 | URL | Effect |
@@ -59,7 +70,7 @@ The best run on each level (most stars, then least Δv, then shortest time) is s
 
 Demo mode shows the level card, sweeps the aim onto the stored solution with the preview visible, holds, launches, flies the solution (including any burns) and shows the results panel with its stars. It ignores input and hides the cursor.
 
-Demo mode never reads or writes saved progress. The results panel therefore looks the same on every machine: three stars, marked as a first delivery.
+Demo mode never reads or writes saved progress, and never shows a saved ghost. The results panel therefore looks the same on every machine: three stars, marked as a first delivery.
 
 All timing, both animation and simulation, comes from the `requestAnimationFrame` timestamp; nothing reads the wall clock. A recording made on a fake clock is therefore the same at any frame rate.
 
@@ -102,6 +113,7 @@ src/
     sim.ts        flight session: aim, launch, burns, fuel, outcomes
     scoring.ts    stars from Δv and time against each level's par
     progress.ts   saved best runs, unlocking, validation of stored data
+    ghost.ts      recording and replaying the best run's path
     levels.ts     the ten levels, each with a par and a stored solution
   render/     canvas drawing (mission-control vector style)
   ui/         game state machine, demo timeline, DOM input

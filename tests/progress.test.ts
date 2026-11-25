@@ -53,6 +53,28 @@ describe('loading and saving', () => {
     expect(loadProgress(storageWith(raw), LEVELS).levels).toEqual({ '1': { stars: 3, fuel: 115, time: 13.1 } });
   });
 
+  it('loads a save written before ghosts existed', () => {
+    // Exactly what the round 3 version wrote.
+    const raw = '{"version":1,"levels":{"1":{"stars":3,"fuel":115,"time":13.108333333333333},"2":{"stars":2,"fuel":190,"time":8.2}}}';
+    const p = loadProgress(storageWith(raw), LEVELS);
+    expect(p.levels['1']).toEqual({ stars: 3, fuel: 115, time: 13.108333333333333 });
+    expect(p.levels['1'].ghost).toBeUndefined();
+    expect(isUnlocked(p, LEVELS, 2)).toBe(true);
+  });
+
+  it('round-trips a ghost with its record', () => {
+    const storage = new MemoryStorage();
+    const ghost = { every: 4, ticks: 5, points: [0, 0, 4, 1, 5.5, 2] };
+    const { progress } = recordRun(emptyProgress(), 1, { stars: 3, fuel: 100, time: 5 / 120, ghost });
+    saveProgress(storage, progress);
+    expect(loadProgress(storage, LEVELS).levels['1']).toEqual({ stars: 3, fuel: 100, time: 5 / 120, ghost });
+  });
+
+  it('keeps a record whose ghost is damaged, without the ghost', () => {
+    const raw = JSON.stringify({ version: 1, levels: { '1': { stars: 2, fuel: 100, time: 9, ghost: { every: 4, ticks: 5, points: [0, 0, 'x', 1, 2, 2] } } } });
+    expect(loadProgress(storageWith(raw), LEVELS).levels).toEqual({ '1': { stars: 2, fuel: 100, time: 9 } });
+  });
+
   it('survives storage that throws', () => {
     const broken: StorageLike = {
       getItem: () => {
@@ -91,6 +113,14 @@ describe('recording runs', () => {
       p = r.progress;
     }
     expect(p.levels['1']).toEqual({ stars: 2, fuel: 250, time: 40 });
+  });
+
+  it('saves the ghost of a new best and keeps the old ghost when a run is not better', () => {
+    const fast = { every: 4, ticks: 1, points: [0, 0, 1, 1] };
+    const slow = { every: 4, ticks: 1, points: [0, 0, 9, 9] };
+    let p = recordRun(emptyProgress(), 1, { stars: 3, fuel: 100, time: 5, ghost: fast }).progress;
+    p = recordRun(p, 1, { stars: 2, fuel: 120, time: 9, ghost: slow }).progress;
+    expect(p.levels['1'].ghost).toEqual(fast);
   });
 
   it('does not change the progress it is given', () => {

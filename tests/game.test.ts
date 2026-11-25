@@ -8,6 +8,7 @@ import type { View } from '../src/render/draw.ts';
 import { drawGame } from '../src/render/frame.ts';
 import { DEMO_LAUNCH_MS, type DemoState } from '../src/ui/demo.ts';
 import { STORAGE_KEY } from '../src/core/progress.ts';
+import { ghostAt, isGhost } from '../src/core/ghost.ts';
 import { selectCardRect } from '../src/render/layout.ts';
 import { createGame, cursorFor, IDLE_INPUT, updateGame, type Game, type InputFrame, type PointerFrame } from '../src/ui/game.ts';
 import { MemoryStorage } from './helpers.ts';
@@ -452,6 +453,91 @@ describe('live play', () => {
       expect(g.progress.levels).toEqual({});
       // The results panel still scores the run.
       expect(g.play!.result?.stars).toBe(3);
+    });
+  });
+
+  describe('ghost of the best run', () => {
+    /** Flies the stored solution by dragging from the ship, drawing every frame; calls `each` per frame in flight. */
+    function flyDrawn(g: Game, ts: number, each?: () => void): number {
+      const ctx = fakeCtx();
+      const sol = g.play!.session.level.solution;
+      ts = dragFromShip(g, ts, pointAt(g, sol.heading, sol.power));
+      for (let i = 0; i < 60 * 40 && g.play!.session.phase !== 'ended'; i++) {
+        updateGame(g, (ts += 1000 / 60), IDLE_INPUT);
+        drawGame(ctx, view, g, ts);
+        each?.();
+      }
+      // Let the results panel play out too.
+      for (let i = 0; i < 150; i++) drawGame(ctx, view, g, (ts += 1000 / 60));
+      return ts;
+    }
+
+    it('has no ghost on a first flight, then replays the best run in time with the next', () => {
+      const storage = new MemoryStorage();
+      const g = createGame({ storage, startLevel: 0 });
+      updateGame(g, 0, IDLE_INPUT);
+      expect(g.play!.ghost).toBeNull();
+      let ts = flyDrawn(g, 0);
+      const saved = JSON.parse(storage.data.get(STORAGE_KEY)!).levels['1'];
+      expect(isGhost(saved.ghost)).toBe(true);
+      expect(saved.ghost.ticks).toBe(g.play!.session.tick);
+
+      updateGame(g, (ts += 16), input({ presses: ['KeyR'] }));
+      const ghost = g.play!.ghost!;
+      expect(ghost).toEqual(saved.ghost);
+      // Flying the same line again, the ghost stays on top of the ship the whole way.
+      let worst = 0;
+      let frames = 0;
+      flyDrawn(g, ts, () => {
+        const s = g.play!.session;
+        const p = ghostAt(ghost, s.tick);
+        worst = Math.max(worst, Math.hypot(p.x - s.ship.x, p.y - s.ship.y));
+        frames++;
+      });
+      expect(frames).toBeGreaterThan(600);
+      expect(worst).toBeLessThan(1);
+    });
+
+    it('comes back after a reload', () => {
+      const storage = new MemoryStorage();
+      const g = createGame({ storage, startLevel: 0 });
+      updateGame(g, 0, IDLE_INPUT);
+      flyDrawn(g, 0);
+      const reloaded = createGame({ storage, startLevel: 0 });
+      updateGame(reloaded, 0, IDLE_INPUT);
+      expect(reloaded.play!.ghost).toEqual(g.progress.levels['1'].ghost);
+    });
+
+    it('loads a save from before ghosts, plays without one, and adds one when that best is beaten', () => {
+      const storage = new MemoryStorage();
+      storage.data.set(STORAGE_KEY, '{"version":1,"levels":{"1":{"stars":1,"fuel":240,"time":25}}}');
+      const g = createGame({ storage, startLevel: 0 });
+      updateGame(g, 0, IDLE_INPUT);
+      expect(g.progress.levels['1']).toEqual({ stars: 1, fuel: 240, time: 25 });
+      expect(g.play!.ghost).toBeNull();
+      const ts = flyDrawn(g, 0);
+      expect(g.play!.result?.newBest).toBe(true);
+      updateGame(g, ts + 16, input({ presses: ['KeyR'] }));
+      expect(isGhost(g.play!.ghost)).toBe(true);
+    });
+
+    it('never shows a saved ghost in demo mode', () => {
+      const storage = new MemoryStorage();
+      const normal = createGame({ storage, startLevel: 0 });
+      updateGame(normal, 0, IDLE_INPUT);
+      flyDrawn(normal, 0);
+      expect(isGhost(normal.progress.levels['1'].ghost)).toBe(true);
+
+      const reads = storage.reads;
+      const demo = createGame({ startLevel: 0, demo: { speed: 1 }, storage });
+      const ctx = fakeCtx();
+      for (let ts = 0; demo.play?.demo?.state !== 'done' && ts < 60_000; ts += 1000 / 60) {
+        updateGame(demo, ts, IDLE_INPUT);
+        drawGame(ctx, view, demo, ts);
+        expect(demo.play!.ghost).toBeNull();
+      }
+      expect(demo.play!.demo!.state).toBe('done');
+      expect(storage.reads).toBe(reads);
     });
   });
 });

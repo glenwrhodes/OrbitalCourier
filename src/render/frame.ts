@@ -1,7 +1,7 @@
 import type { Game } from '../ui/game.ts';
 import type { View } from './draw.ts';
 import { drawHud, drawLevelCard, drawResults, drawTitle } from './hud.ts';
-import { drawAim, drawBodies, drawDelivery, drawGrid, drawImpact, drawLaunchPad, drawOrbits, drawPreview, drawShip, drawTargetRing, drawTrail } from './scene.ts';
+import { drawAim, drawBodies, drawDelivery, drawGhost, drawGrid, drawImpact, drawLaunchPad, drawOrbits, drawPreview, drawShip, drawTargetRing, drawTrail } from './scene.ts';
 import { headingToDir } from '../core/vec.ts';
 import { totalStars } from '../core/progress.ts';
 import { drawSelect } from './select.ts';
@@ -27,6 +27,8 @@ export function drawGame(ctx: CanvasRenderingContext2D, view: View, game: Game, 
   drawOrbits(ctx, view, w, tick);
   drawTargetRing(ctx, view, w, tick, ts);
   drawBodies(ctx, view, w, tick, s.phase === 'aiming' ? aimAngle : null);
+  // Underneath the live flight: the ghost is at the same moment of its own flight.
+  if (play.ghost) drawGhost(ctx, view, play.ghost, tick);
 
   if (s.phase === 'aiming') {
     drawLaunchPad(ctx, view, w);

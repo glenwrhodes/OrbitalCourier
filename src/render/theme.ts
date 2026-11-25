@@ -22,6 +22,8 @@ export const COLOR = {
   text: '#d9e7ee',
   textDim: 'rgba(217, 231, 238, 0.5)',
   panel: 'rgba(0, 0, 0, 0.9)',
+  ghost: 'rgba(196, 255, 222, 0.62)',
+  ghostPath: 'rgba(196, 255, 222, 0.2)',
 } as const;
 
 export const FONT_STACK = '"IBM Plex Mono", "JetBrains Mono", Consolas, "SF Mono", Menlo, "DejaVu Sans Mono", monospace';

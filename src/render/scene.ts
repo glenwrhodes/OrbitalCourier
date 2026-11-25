@@ -1,4 +1,5 @@
 import { DT, LAUNCH_CLEARANCE, TICK_RATE, TRAIL_EVERY, WORLD_HEIGHT, WORLD_WIDTH } from '../core/constants.ts';
+import { ghostAt, type Ghost } from '../core/ghost.ts';
 import type { Prediction } from '../core/predict.ts';
 import type { Session } from '../core/sim.ts';
 import { headingToDir } from '../core/vec.ts';
@@ -397,6 +398,39 @@ export function drawPreview(ctx: CanvasRenderingContext2D, view: View, world: Wo
     ctx.strokeStyle = COLOR.cyanDim;
     circle(ctx, ex, ey, 3);
   }
+  ctx.restore();
+}
+
+/** The best run: its whole path, faint and dotted, and a ghost ship at the same moment of its flight. */
+export function drawGhost(ctx: CanvasRenderingContext2D, view: View, ghost: Ghost, tick: number): void {
+  const pts = ghost.points;
+  ctx.save();
+  ctx.lineWidth = view.lw;
+  ctx.strokeStyle = COLOR.ghostPath;
+  ctx.setLineDash([2, 5]);
+  ctx.beginPath();
+  ctx.moveTo(pts[0], pts[1]);
+  for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const pose = ghostAt(ghost, tick);
+  ctx.globalAlpha = pose.finished ? 0.45 : 1;
+  ctx.strokeStyle = COLOR.ghost;
+  if (pose.finished) circle(ctx, pose.x, pose.y, 7);
+  ctx.save();
+  ctx.translate(pose.x, pose.y);
+  ctx.rotate(pose.angle);
+  ctx.lineWidth = 1.2 * view.lw;
+  ctx.beginPath();
+  ctx.moveTo(10, 0);
+  ctx.lineTo(-6, -6);
+  ctx.lineTo(-3, 0);
+  ctx.lineTo(-6, 6);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
+  text(ctx, 'BEST', pose.x + 12, pose.y - 10, { size: 10, color: COLOR.ghost, spacing: 2 });
   ctx.restore();
 }
 
