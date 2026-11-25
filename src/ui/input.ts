@@ -7,6 +7,8 @@ export class InputCollector {
   private shift = false;
   private px = 0;
   private py = 0;
+  private pressX = 0;
+  private pressY = 0;
   private down = false;
   private pressed = false;
   private released = false;
@@ -30,6 +32,8 @@ export class InputCollector {
       canvas.setPointerCapture(e.pointerId);
       this.px = e.clientX;
       this.py = e.clientY;
+      this.pressX = e.clientX;
+      this.pressY = e.clientY;
       this.down = true;
       this.pressed = true;
     });
@@ -51,11 +55,12 @@ export class InputCollector {
   /** Snapshot for this frame, with the pointer mapped to world coordinates. */
   take(toWorld: (clientX: number, clientY: number) => { x: number; y: number }): InputFrame {
     const p = toWorld(this.px, this.py);
+    const press = toWorld(this.pressX, this.pressY);
     const frame: InputFrame = {
       presses: this.presses,
       held: new Set(this.held),
       shift: this.shift,
-      pointer: { x: p.x, y: p.y, down: this.down, pressed: this.pressed, released: this.released },
+      pointer: { x: p.x, y: p.y, pressX: press.x, pressY: press.y, down: this.down, pressed: this.pressed, released: this.released },
     };
     this.presses = [];
     this.pressed = false;

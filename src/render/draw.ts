@@ -103,6 +103,36 @@ export function panel(ctx: CanvasRenderingContext2D, view: View, x: number, y: n
   ctx.restore();
 }
 
+/** A five-pointed star outline, filled when earned. */
+export function star(ctx: CanvasRenderingContext2D, view: View, x: number, y: number, r: number, filled: boolean, color: string): void {
+  ctx.save();
+  ctx.beginPath();
+  for (let k = 0; k < 10; k++) {
+    const a = -Math.PI / 2 + (k * Math.PI) / 5;
+    const rr = k % 2 === 0 ? r : r * 0.45;
+    if (k === 0) ctx.moveTo(x + rr * Math.cos(a), y + rr * Math.sin(a));
+    else ctx.lineTo(x + rr * Math.cos(a), y + rr * Math.sin(a));
+  }
+  ctx.closePath();
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 1.4 * view.lw;
+  ctx.strokeStyle = color;
+  if (filled) {
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** A row of three stars, `earned` of them filled, centred on x. */
+export function starRow(ctx: CanvasRenderingContext2D, view: View, x: number, y: number, r: number, earned: number, gap = r * 2.6): void {
+  for (let k = 0; k < 3; k++) {
+    const on = k < earned;
+    star(ctx, view, x + (k - 1) * gap, y, r, on, on ? COLOR.amber : 'rgba(217, 231, 238, 0.3)');
+  }
+}
+
 /** mm:ss.t */
 export function clock(seconds: number): string {
   const s = Math.max(0, seconds);

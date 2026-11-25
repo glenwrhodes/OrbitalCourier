@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { LAUNCH_CLEARANCE, WORLD_HEIGHT, WORLD_WIDTH } from '../src/core/constants.ts';
 import { LEVELS } from '../src/core/levels.ts';
+import { sessionStars } from '../src/core/scoring.ts';
 import { fuelUsed, runSolution } from '../src/core/sim.ts';
 import { createWorld } from '../src/core/world.ts';
 import { circleHitsRect, HUD_RECTS } from '../src/render/layout.ts';
@@ -34,6 +35,13 @@ describe.each(LEVELS.map((l) => [l.id, l.name, l] as const))('level %i %s', (_id
       expect(Math.abs(s.trail[i])).toBeLessThan(WORLD_WIDTH / 2);
       expect(Math.abs(s.trail[i + 1])).toBeLessThan(WORLD_HEIGHT / 2);
     }
+  });
+
+  it('earns three stars with its stored solution, with a par tighter than the limits', () => {
+    const s = runSolution(level, level.solution, world);
+    expect(sessionStars(s)).toBe(3);
+    expect(level.par.fuel).toBeLessThan(level.fuel);
+    expect(level.par.time).toBeLessThan(level.timeLimit);
   });
 
   it('has a stored solution that is not a knife edge', () => {

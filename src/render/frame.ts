@@ -3,12 +3,18 @@ import type { View } from './draw.ts';
 import { drawHud, drawLevelCard, drawResults, drawTitle } from './hud.ts';
 import { drawAim, drawBodies, drawDelivery, drawGrid, drawImpact, drawLaunchPad, drawOrbits, drawPreview, drawShip, drawTargetRing, drawTrail } from './scene.ts';
 import { headingToDir } from '../core/vec.ts';
+import { totalStars } from '../core/progress.ts';
+import { drawSelect } from './select.ts';
 
 /** Draws one frame. The context must already map world space (origin at centre) onto the canvas. */
 export function drawGame(ctx: CanvasRenderingContext2D, view: View, game: Game, ts: number): void {
   drawGrid(ctx, view);
+  if (game.screen === 'select') {
+    drawSelect(ctx, view, game, ts);
+    return;
+  }
   if (game.screen === 'title' || !game.play) {
-    drawTitle(ctx, view, ts);
+    drawTitle(ctx, view, ts, totalStars(game.progress));
     return;
   }
   const play = game.play;

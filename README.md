@@ -22,27 +22,44 @@ Other commands:
 | `npm run build` | Type-checks, then builds the static site into `dist/` |
 | `npm run design` | Level design helper (see below) |
 
+GitHub Actions (`.github/workflows/ci.yml`) runs the type check, the tests and the build on every push. It is a check only, with no release and no deploy.
+
 ## How to play
 
-- **Aim:** press anywhere and drag. The launch vector runs from the pickup moon toward the pointer; its length is the launch Δv. The dashed line is the predicted path for the next 10 seconds. Release to launch.
+- **Flights:** the title leads to the level select. Each flight opens when you deliver the one before it.
+- **Aim:** press on or near the ship (the cursor turns into a hand) and drag. The launch vector runs from the pickup moon toward the pointer, and its length is the launch Δv. The dashed line is the predicted path for the next 10 seconds. Release to launch. A click that doesn't drag does nothing, and Esc cancels a drag.
 - **Fine aim:** ←/→ turn 1° (Shift: 0.1°), ↑/↓ change Δv by 5 (Shift: 0.5). Space or Enter launches.
 - **In flight:** hold W or ↑ to burn prograde (speed up along your path), S or ↓ to burn retrograde. The preview updates as you burn.
 - **Time:** 1, 2, 3 for 1×, 2×, 4× warp; P pauses.
-- **Anywhere:** R restarts the flight; Esc goes back to the title.
+- **Anywhere in a flight:** R restarts; Esc goes back to the level select.
 - **Win:** reach the green ring around the target moon. **Lose:** hit anything, leave the screen area, or run out of time.
 - **Fuel:** the launch and every burn come out of one Δv budget per level.
+
+### Stars and saved progress
+
+| Stars | How to earn them |
+| --- | --- |
+| ★ | Deliver the parcel |
+| ★★ | Deliver using no more Δv than the level's par |
+| ★★★ | Do both of the above and also arrive within the par time |
+
+Each level shows its par on its title card and next to the clock and Δv in the telemetry panel. A green tick on the fuel bar marks where you drop below two stars.
+
+The best run on each level (most stars, then least Δv, then shortest time) is saved in the browser's localStorage under `orbital-courier:v1`. Failed flights are never recorded. To start over, run `localStorage.removeItem('orbital-courier:v1')` in the browser console.
 
 ## URL options
 
 | URL | Effect |
 | --- | --- |
-| `?level=4` | Opens straight into flight 4 |
+| `?level=4` | Opens straight into flight 4, even if it is still locked |
 | `?level=4&demo=solution` | Demo mode: plays flight 4's stored solution through the normal game and renderer |
 | `&speed=2` | Demo playback speed (default 1) |
 
 ### Demo mode, for recording
 
-Demo mode shows the level card, sweeps the aim onto the stored solution with the preview visible, holds, launches, flies the solution (including any burns) and shows the results panel. It ignores input and hides the cursor.
+Demo mode shows the level card, sweeps the aim onto the stored solution with the preview visible, holds, launches, flies the solution (including any burns) and shows the results panel with its stars. It ignores input and hides the cursor.
+
+Demo mode never reads or writes saved progress. The results panel therefore looks the same on every machine: three stars, marked as a first delivery.
 
 All timing, both animation and simulation, comes from the `requestAnimationFrame` timestamp; nothing reads the wall clock. A recording made on a fake clock is therefore the same at any frame rate.
 
@@ -55,6 +72,7 @@ Timeline, from the first frame:
 | 4.0 – 4.9 s | Aim held, preview showing |
 | 4.9 s | Launch; then the flight plays in real time (÷ `speed`) |
 | end + 0.7 s | Results panel fades in |
+| end + 1.1 – 1.8 s | Stars appear one by one |
 | end + 2.2 s | Demo reports `done` |
 
 To know when to stop recording, read `window.orbitalCourier.demo` or the `data-demo` attribute on `<html>`. Both step through `intro`, `aiming`, `flying`, `ended`, `done`; `window.orbitalCourier.outcome` holds the result.
@@ -82,7 +100,9 @@ src/
     world.ts      a level compiled for flight; the shared step function
     predict.ts    trajectory preview
     sim.ts        flight session: aim, launch, burns, fuel, outcomes
-    levels.ts     the ten levels, each with a stored solution
+    scoring.ts    stars from Δv and time against each level's par
+    progress.ts   saved best runs, unlocking, validation of stored data
+    levels.ts     the ten levels, each with a par and a stored solution
   render/     canvas drawing (mission-control vector style)
   ui/         game state machine, demo timeline, DOM input
   main.ts     canvas, URL options, requestAnimationFrame loop
@@ -94,13 +114,13 @@ scripts/      start script and level design tools
 
 Each level stores a known solution, a launch plus optional burns. `tests/levels.test.ts` checks that it:
 
-- delivers within the fuel and time limits;
+- delivers within the fuel and time limits, earning three stars;
 - stays on screen;
 - survives small aiming errors.
 
 The same file also checks that bodies never touch each other and never sit under the HUD.
 
-After changing a level, run the design helper to find a new solution:
+After changing a level, run the design helper to find a new solution. Then set the level's `par` a little above that solution's Δv and flight time.
 
 ```
 npm run design -- 4 --plot              # sweep level 4, print a robust solution, draw scripts/out/level-04.png

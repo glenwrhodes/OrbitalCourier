@@ -67,6 +67,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 250,
     timeLimit: 30,
     deliveryRadius: 40,
+    par: { fuel: 120, time: 15 },
     solution: { heading: 76.6, power: 115, burns: [] },
   },
   {
@@ -86,6 +87,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 220,
     timeLimit: 35,
     deliveryRadius: 40,
+    par: { fuel: 205, time: 7 },
     solution: { heading: 97.5, power: 200, burns: [] },
   },
   {
@@ -104,6 +106,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 190,
     timeLimit: 35,
     deliveryRadius: 40,
+    par: { fuel: 120, time: 13 },
     solution: { heading: 123.7, power: 115, burns: [] },
   },
   {
@@ -123,6 +126,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 100,
     timeLimit: 40,
     deliveryRadius: 60,
+    par: { fuel: 50, time: 7 },
     solution: { heading: 129.6, power: 45, burns: [] },
   },
   {
@@ -143,6 +147,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 150,
     timeLimit: 35,
     deliveryRadius: 40,
+    par: { fuel: 125, time: 12 },
     solution: { heading: 108.8, power: 118.4, burns: [] },
   },
   {
@@ -164,6 +169,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 170,
     timeLimit: 40,
     deliveryRadius: 40,
+    par: { fuel: 155, time: 12 },
     solution: { heading: 101.8, power: 149, burns: [] },
   },
   {
@@ -183,6 +189,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 140,
     timeLimit: 35,
     deliveryRadius: 40,
+    par: { fuel: 100, time: 10 },
     solution: { heading: 90.6, power: 95, burns: [] },
   },
   {
@@ -205,6 +212,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 150,
     timeLimit: 40,
     deliveryRadius: 40,
+    par: { fuel: 125, time: 16 },
     solution: { heading: 102.4, power: 118.1, burns: [] },
   },
   {
@@ -226,6 +234,7 @@ export const LEVELS: Level[] = [
     timeLimit: 40,
     deliveryRadius: 40,
     // Launch, swing around SOL, then a short prograde burn on the way back reaches LOWER-I.
+    par: { fuel: 165, time: 21 },
     solution: { heading: 39.4, power: 140.5, burns: [{ start: 1100, end: 1140, dir: 1 }] },
   },
   {
@@ -247,6 +256,7 @@ export const LEVELS: Level[] = [
     maxLaunch: 120,
     timeLimit: 45,
     deliveryRadius: 40,
+    par: { fuel: 115, time: 17 },
     solution: { heading: 94.9, power: 110, burns: [] },
   },
 ];

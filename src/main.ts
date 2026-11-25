@@ -5,6 +5,9 @@
 //   ?level=N&demo=solution   play level N's stored solution (for recording)
 //   &speed=2                 demo playback speed (default 1)
 //
+// Progress is saved in localStorage under "orbital-courier:v1". Demo mode
+// never reads or writes it.
+//
 // All animation and simulation timing comes from the rAF timestamp, so a
 // recording on a fake clock looks the same at any frame rate. In demo mode,
 // window.orbitalCourier.demo and <html data-demo="..."> report progress:
@@ -16,7 +19,8 @@ import { COLOR } from './render/theme.ts';
 import { drawGame } from './render/frame.ts';
 import type { View } from './render/draw.ts';
 import type { DemoState } from './ui/demo.ts';
-import { createGame, updateGame, type GameOptions } from './ui/game.ts';
+import { STORAGE_KEY, type StorageLike } from './core/progress.ts';
+import { createGame, cursorFor, updateGame, type GameOptions } from './ui/game.ts';
 import { InputCollector } from './ui/input.ts';
 
 declare global {
@@ -43,6 +47,19 @@ if (demo) {
     document.documentElement.dataset.demo = state;
   };
   canvas.style.cursor = 'none';
+} else {
+  options.storage = localStorageOrNull();
+}
+
+/** localStorage, or null where it is unavailable (disabled, sandboxed, some private modes). */
+function localStorageOrNull(): StorageLike | null {
+  try {
+    const s = window.localStorage;
+    s.getItem(STORAGE_KEY);
+    return s;
+  } catch {
+    return null;
+  }
 }
 
 const game = createGame(options);
@@ -73,7 +90,12 @@ function toWorld(clientX: number, clientY: number): { x: number; y: number } {
 
 function frame(ts: number): void {
   resize();
-  updateGame(game, ts, input.take(toWorld));
+  const frameInput = input.take(toWorld);
+  updateGame(game, ts, frameInput);
+  if (!demo) {
+    const cursor = cursorFor(game, frameInput.pointer.x, frameInput.pointer.y);
+    if (canvas.style.cursor !== cursor) canvas.style.cursor = cursor;
+  }
 
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);

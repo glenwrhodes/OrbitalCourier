@@ -18,9 +18,25 @@ export function testLevel(overrides: Partial<Level> = {}): Level {
     maxLaunch: 250,
     timeLimit: 20,
     deliveryRadius: 30,
+    par: { fuel: 150, time: 10 },
     solution: { heading: 0, power: 100, burns: [] },
     ...overrides,
   };
+}
+
+/** In-memory stand-in for localStorage that counts how it is used. */
+export class MemoryStorage {
+  readonly data = new Map<string, string>();
+  reads = 0;
+  writes = 0;
+  getItem(key: string): string | null {
+    this.reads++;
+    return this.data.get(key) ?? null;
+  }
+  setItem(key: string, value: string): void {
+    this.writes++;
+    this.data.set(key, value);
+  }
 }
 
 export function emptySpace(extra: BodyDef[] = []): BodyDef[] {

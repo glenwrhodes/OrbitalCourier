@@ -34,6 +34,8 @@ export interface Level {
   timeLimit: number;
   /** Reaching this distance from the target's centre delivers the parcel. */
   deliveryRadius: number;
-  /** A known flight that delivers within the fuel and time limits. Verified by the tests. */
+  /** Par for stars: 2 stars for using at most `fuel` Δv, 3 for also arriving within `time` seconds. */
+  par: { fuel: number; time: number };
+  /** A known flight that delivers within the fuel and time limits, at 3 stars. Verified by the tests. */
   solution: Solution;
 }
